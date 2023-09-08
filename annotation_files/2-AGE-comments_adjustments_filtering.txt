@@ -1,0 +1,3 @@
+The following comments refer to the 2-AGE-sample_annotation2.csv file, which is intended for further analysis.
+To obtain consistency or. an equal amount of timestamps for the samples only the timestamps 3,12,24,48,60 were selected (which excludes all samples from child nr. 2 since some of those timestamps are missing). 
+All samples can still be found in the 2-AGE-sample_annotation.csv file.

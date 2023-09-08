@@ -1,0 +1,4 @@
+The following comments refer to the 4-GEN-sample_annotation2.csv file, which is intended for further analysis.
+The Gender_ID column was encoded to 0: Gender affirmation F to M, 1:  Gender affirmation M to F. 
+To obtain consistency or an equal amount of timestamps for the samples the samples of patient 1 (M to F) were discarded.
+All samples can still be found in the 4-GEN-sample_annotation.csv file.

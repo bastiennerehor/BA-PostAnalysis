@@ -1,0 +1,4 @@
+The following comments refer to the 6-T1D-sample_annotation_case.csv file, which is intended for further analysis.
+Only the case samples were kept and only those of where the methylation screening tool is the EPIC BeadChip.
+To obtain consistency or. an equal amount of timestamps for the samples only 3 timestamps were chosen (the fourth was deleted if present). The Timestamps 3,4,5 were chosen because they were the most frequent of the four (2,3,4,5) timestamps. 
+All samples in their original condition can be found in the 6-T1D-sample_annotation.csv file.

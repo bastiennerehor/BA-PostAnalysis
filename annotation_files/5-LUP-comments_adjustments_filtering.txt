@@ -1,0 +1,6 @@
+The following comments refer to the 5-LUP-sample_annotation2.csv file, which is intended for further analysis.
+
+To obtain consistency or. an equal amount of timestamps for the timestamps: 0,1,2,3,4 were selected. Therefore all samples of patient 3,6,11,15,18,24,26,29,31,35,36,37,41,42,43,45,46,49,51,52,53,55,57,60,62,70,75,76,77,82,83,84,88 as well as all samples of larger timestamps were discarded.
+All patients are female.
+
+All samples can still be found in the 5-LUP-sample_annotation.csv file.

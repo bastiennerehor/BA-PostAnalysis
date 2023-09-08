@@ -1,0 +1,6 @@
+The timestamps from the dataset are converted to approximate, numerical and scalable values (each timestamp 4 months apart from the previous and next one) according to the following statement: "Peripheral blood samples were collected at baseline (BL), and subsequent follow-ups (FU), every 4 ± 1 months."
+The following comments refer to the 3-CA-sample_annotation2.csv file, which is intended for further analysis.
+To obtain consistency or. an equal amount of timestamps for the samples only the timestamps 0(BL),4(FU1),8(FU2),12(FU3),16(FU4) were selected (which excludes all samples from Patient 2,7,8,20,29 since some of those timestamps are missing). 
+All samples can still be found in the 3-CA-sample_annotation.csv file.
+
+

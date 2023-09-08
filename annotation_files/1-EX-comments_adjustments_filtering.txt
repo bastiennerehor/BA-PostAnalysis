@@ -1,0 +1,4 @@
+The following comments refer to the 1-EX-sample_annotation2_onlyHL.csv file, which is intended for further analysis.
+Since timestamp 6h of participant 12 was missing all his samples were discarded and
+10 participant samples remained. 
+All samples can still be found in the 1-EX-sample_annotation.csv file.
