@@ -7,13 +7,13 @@
 
 require(data.table)
 require(ggplot2)
-require("ggpattern")
+require(ggpattern)
 
 # which pvalue type is used, saved and plotted
 pval_type <- "original" #original fdr
 dmr_statistics_path <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/R_Dimmer/Thesis_Results/DMR_statistics_BA.csv"
 plot_path <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/R_Dimmer/Thesis_Results/"
-write_file <- FALSE
+write_file <- FALSE # if new dmr statistics file should be written
 
 ### Functions ####
 write_to_file <- function(dataset, method, dmrfile){

@@ -78,8 +78,8 @@ plotScore <- function(scores,Scorename, Scorenameshort,clusterList,Methodname, p
     geom_line() +
     xlab("Number of Clusters") +
     ylab(Scorename) +
-    theme(text=element_text(size=16))
-    #ggtitle(paste("Internal CVI:",Scorename))
+    #theme(text=element_text(size=16))
+    ggtitle(paste("Internal CVI:",Scorename))
   if(points){
     g <- g + geom_point()
   }
@@ -210,7 +210,10 @@ friedman_dt <- friedman_dt %>% select(-c("PatientNr","Gender_ID", "Date_of_birth
 # Calculate mean values over all Patients grouped by timestamp
 ncores = 4
 anova_dt_red <- anova_dt[, parallel::mclapply(.SD, mean, mc.cores = as.numeric(ncores)), by = timestamp]
+anova_dt_red <- anova_dt_red[order(anova_dt_red$timestamp)] # order by timestamp / time
 friedman_dt_red <- friedman_dt[, parallel::mclapply(.SD, mean, mc.cores = as.numeric(ncores)), by = timestamp]
+friedman_dt_red <- friedman_dt_red[order(friedman_dt_red$timestamp)] # order by timestamp / time
+anova_dt_red[1:10,1:10]
 
 # Get and transpose Matrix for Clustering
 m_anova <- data.matrix(anova_dt_red[,-1])
@@ -431,7 +434,7 @@ RowSideCols <- colorRamp2(c(mi,(mid-mi)/2,mid+(mid-mi)/2,mx), c("white","blue","
 
 # colors for the Clusters
 new_color_palatte <- as.character(num2col(c(-1:12), col.pal=redpal))
-names(new_color_palatte) <- c("-1","0","1","2","3","4","5","6","7","8","9","10","11","12")
+names(new_color_palatte) <- c("-1","0","1","3","11","2","9","12","5","8","6","7","10","4")
 new_color_palatte["-1"] <- "gainsboro" # Insignificant CpGs (or those that are not even in the beta matrix)
 new_color_palatte["0"] <- "white" # No CpGs/ empty Position 
 new_color_palatte <- as.factor(new_color_palatte)
@@ -477,8 +480,8 @@ h1 <- Heatmap(input, col=new_color_palatte, name = "Clusters",
         cluster_rows = FALSE, row_names_gp = gpar(fontsize = 5),
         border_gp = gpar(col = "white"), left_annotation = ha,
         heatmap_legend_param = list(
-          title = "Clusters", at= c(-1:12),
-          labels =  c("Insignificant CpG", "", 1:12)
+          title = "Clusters", at= c("-1","0","1","3","11","2","9","12","5","8","6","7","10","4"),
+          labels =  c("-1"="Insignificant CpG", "0"="", "1"="1","3"="3","11"="11","2"="2","9"="9","12"="12","5"="5","8"="8","6"="6","7"="7","10"="10","4"="4")
         ))
 
 # plot and save figure
@@ -512,8 +515,8 @@ h1 <- Heatmap(input, col=new_color_palatte, name = "Clusters",
               cluster_rows = FALSE, row_names_gp = gpar(fontsize = 5),
               border_gp = gpar(col = "white"), left_annotation = ha,
               heatmap_legend_param = list(
-                title = "Clusters", at= c(-1:12),
-                labels =  c("Insignificant CpG", "", 1:12)
+                title = "Clusters", at= c("-1","0","1","3","11","2","9","12","5","8","6","7","10","4"),
+                labels =  c("-1"="Insignificant CpG", "0"="", "1"="1","3"="3","11"="11","2"="2","9"="9","12"="12","5"="5","8"="8","6"="6","7"="7","10"="10","4"="4")
               ))
 
 # plot and save figure
@@ -577,23 +580,23 @@ unifrac_dist_mat <- data.matrix(unifrac_dist)
 colnames(unifrac_dist_mat) <- rownames(dmr_anova)
 rownames(unifrac_dist_mat) <- rownames(dmr_anova)
 
-#unifrac_dist_mat[c(40,59,265,275,360,409,416),275]
-
-#all_dmr_all_clusters_with_position[310,]
-#all_dmr_all_clusters_with_position[275,]
-#all_dmr_all_clusters_with_position[c(130, 247, 263, 291, 304, 347, 377),]
-
+# select one target DMR to search for co-modified DMRs
 dmr_nr = 130
 
-which(unifrac_dist_mat[,dmr_nr] <= 0.17, arr.ind=TRUE)
+#which(unifrac_dist_mat[,dmr_nr] <= 0.17, arr.ind=TRUE)
 co_modified_dmrs <- as.vector(which(unifrac_dist_mat[,dmr_nr] <= 0.17, arr.ind=TRUE))
 
 # create dfs for plotting
 df <- data.frame (DMRs  = rownames(unifrac_dist_mat),
                   unifr = unifrac_dist_mat[,dmr_nr]
 )
+# mark co-modified DMRs
 df_marked <- data.frame(DMRs  = as.vector(co_modified_dmrs),
                         unifr = as.vector(unifrac_dist_mat[co_modified_dmrs,dmr_nr])
+)
+# mark target DMR differently
+df_target <- data.frame(DMRs  = as.vector(dmr_nr),
+                        unifr = as.vector(0.0)
 )
 
 ggplot(df, aes(x=as.numeric(DMRs), y=unifr, label = DMRs)) +
@@ -601,9 +604,15 @@ ggplot(df, aes(x=as.numeric(DMRs), y=unifr, label = DMRs)) +
   ggtitle(paste("Unifrac Distance between DMR no. ",dmr_nr," and all other DMRs",sep="")) +
   theme(legend.position = "none",axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) + 
+  geom_hline(yintercept = threshold, colour="darkgray", linewidth=0.8, alpha=0.3) +
   geom_point(data=df_marked,
-             aes(x=as.numeric(DMRs),y=unifr, 
-                 size=5),color='violet') +
+             aes(x=as.numeric(DMRs),y=unifr),color='violet', 
+             size=3) +
+  geom_point(data=df_target,
+             aes(x=as.numeric(DMRs),y=unifr),color='white', 
+             size=3) + 
+  geom_point(data=df_marked, aes(x=as.numeric(DMRs),y=unifr)
+             , shape = 1,size = 3,colour = "black") +
   geom_label_repel(data=df_marked, box.padding = 1.5) + 
   ylab("Unifrac Distance") + xlab("DMRs")
 ggsave(paste0(path,method,"/ScatterPlot_UnifracScore_DMR_",dmr_nr,".png", sep = ""))
@@ -624,6 +633,58 @@ hb <- Heatmap(unifrac_dist_mat,show_column_dend = FALSE, col = viridis(200, opti
 png(file=paste0(path,method,"/Heatmap_UnifracDistances.png", sep = ""))
 draw(hb)
 dev.off()
+
+## ANOVA Alternative Alpha diversity scores tested ####
+
+# ## Calculate Heterogenity according to shannon entropy (without taking the distance between categories/ clusters into account)
+# entropy_score <- diverse::diversity(as.matrix(all_dmr_clust_freq_noNC), type = "entropy")
+# entropy_score <- entropy_score[order(row.names(entropy_score)), ]
+# diversity_dmr_cluster_temp$entropy_score <- entropy_score
+# 
+# diversity_dmr_cluster_temp$color
+# 
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=-log10(Pvalue))) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - P-value vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRPvalue.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=NumCpGs)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - Length vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRLength.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=amountDiffCluster)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - # Different Cluster vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRDiffClusters.png", sep = ""))
+# 
+# # Calculate Phylogenetic/ Tree-considering Diversity (disregards 12 cluster)
+# result_tmp <- pd(OTU, myTree, include.root=FALSE) #ses.pd
+# phylogenetic_score <- result_tmp$PD
+# diversity_dmr_cluster_temp$phylogenetic_score <- phylogenetic_score
+# 
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=-log10(Pvalue))) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - P-value vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRPvalue.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=NumCpGs)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - Length vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRLength.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=amountDiffCluster)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - # Different Cluster vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRDiffClusters.png", sep = ""))
 
 ### Friedman Alpha Diversity ####
 method <- "Friedman"
@@ -688,7 +749,7 @@ RowSideCols <- colorRamp2(c(mi,(mid-mi)/2,mid+(mid-mi)/2,mx), c("white","blue","
 
 # colors for the Clusters
 new_color_palatte <- as.character(num2col(c(-1:12), col.pal=greenpal))
-names(new_color_palatte) <- c("-1","0","1","2","3","4","5","6","7","8","9","10","11","12")
+names(new_color_palatte) <- c("-1","0","1","9","2","12","4","8","10","5","7","6","11","3")
 new_color_palatte["-1"] <- "gainsboro" # Insignificant CpGs (or those that are not even in the beta matrix)
 new_color_palatte["0"] <- "white" # No CpGs/ empty Position 
 new_color_palatte <- as.factor(new_color_palatte)
@@ -734,8 +795,8 @@ h1 <- Heatmap(input, col=new_color_palatte, name = "Clusters",
               cluster_rows = FALSE, row_names_gp = gpar(fontsize = 5),
               border_gp = gpar(col = "white"), left_annotation = ha,
               heatmap_legend_param = list(
-                title = "Clusters", at= c(-1:12),
-                labels =  c("Insignificant CpG", "", 1:12)
+                title = "Clusters", at= c("-1","0","1","9","2","12","4","8","10","5","7","6","11","3"),
+                labels =  c("-1"="Insignificant CpG", "0"="", "1"="1","9"="9","2"="2","12"="12","4"="4","8"="8","10"="10","5"="5","7"="7","6"="6","11"="11","3"="3")
               ))
 
 # plot and save figure
@@ -769,8 +830,8 @@ h1 <- Heatmap(input, col=new_color_palatte, name = "Clusters",
               cluster_rows = FALSE, row_names_gp = gpar(fontsize = 5),
               border_gp = gpar(col = "white"), left_annotation = ha,
               heatmap_legend_param = list(
-                title = "Clusters", at= c(-1:12),
-                labels =  c("Insignificant CpG", "", 1:12)
+                title = "Clusters", at= c("-1","0","1","9","2","12","4","8","10","5","7","6","11","3"),
+                labels =  c("-1"="Insignificant CpG", "0"="", "1"="1","9"="9","2"="2","12"="12","4"="4","8"="8","10"="10","5"="5","7"="7","6"="6","11"="11","3"="3")
               ))
 
 # plot and save figure
@@ -850,8 +911,13 @@ co_modified_dmrs <- as.vector(which(unifrac_dist_mat[,dmr_nr] <= threshold, arr.
 df <- data.frame (DMRs  = rownames(unifrac_dist_mat),
                   unifr = unifrac_dist_mat[,dmr_nr]
                   )
+# mark co-modified DMRs
 df_marked <- data.frame(DMRs  = as.vector(co_modified_dmrs),
                            unifr = as.vector(unifrac_dist_mat[co_modified_dmrs,dmr_nr])
+)
+# mark target DMR differently
+df_target <- data.frame(DMRs  = as.vector(dmr_nr),
+                        unifr = as.vector(0.0)
 )
 
 ggplot(df, aes(x=as.numeric(DMRs), y=unifr, label = DMRs)) +
@@ -861,8 +927,13 @@ ggplot(df, aes(x=as.numeric(DMRs), y=unifr, label = DMRs)) +
         axis.ticks.x=element_blank()) + 
   geom_hline(yintercept = threshold, colour="darkgray", linewidth=0.8, alpha=0.3) +
   geom_point(data=df_marked,
-             aes(x=as.numeric(DMRs),y=unifr, 
-                  size=5),color='violet') +
+             aes(x=as.numeric(DMRs),y=unifr),color='violet', 
+             size=3) +
+  geom_point(data=df_target,
+             aes(x=as.numeric(DMRs),y=unifr),color='white', 
+             size=3) + 
+  geom_point(data=df_marked, aes(x=as.numeric(DMRs),y=unifr)
+             , shape = 1,size = 3,colour = "black") +
   geom_label_repel(data=df_marked, box.padding = 1.5) + 
   ylab("Unifrac Distance") + xlab("DMRs")
 ggsave(paste0(path,method,"/ScatterPlot_UnifracScore_DMR_",dmr_nr,".png", sep = ""))
@@ -883,3 +954,55 @@ hb <- Heatmap(unifrac_dist_mat,show_column_dend = FALSE, col = viridis(200),
 png(file=paste0(path,method,"/Heatmap_UnifracDistances.png", sep = ""))
 draw(hb)
 dev.off()
+
+## ANOVA Alternative Alpha diversity scores tested ####
+
+# ## Calculate Heterogenity according to shannon entropy (without taking the distance between categories/ clusters into account)
+# entropy_score <- diverse::diversity(as.matrix(all_dmr_clust_freq_noNC), type = "entropy")
+# entropy_score <- entropy_score[order(row.names(entropy_score)), ]
+# diversity_dmr_cluster_temp$entropy_score <- entropy_score
+# 
+# diversity_dmr_cluster_temp$color
+# 
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=-log10(Pvalue))) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - P-value vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRPvalue.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=NumCpGs)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - Length vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRLength.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=entropy_score, y=amountDiffCluster)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - # Different Cluster vs. Diversity Score")) +
+#   xlab("Entropy Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlotEntropyDiversity_DMRDiffClusters.png", sep = ""))
+# 
+# # Calculate Phylogenetic/ Tree-considering Diversity (disregards 12 cluster)
+# result_tmp <- pd(OTU, myTree, include.root=FALSE) #ses.pd
+# phylogenetic_score <- result_tmp$PD
+# diversity_dmr_cluster_temp$phylogenetic_score <- phylogenetic_score
+# 
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=-log10(Pvalue))) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - P-value vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRPvalue.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=NumCpGs)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - Length vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRLength.png", sep = ""))
+# ggplot(diversity_dmr_cluster_temp, aes(x=phylogenetic_score, y=amountDiffCluster)) +
+#   geom_point() + 
+#   theme(legend.position = "none") + 
+#   ggtitle(paste("Scatterplot",method,"DMRs - # Different Cluster vs. Diversity Score")) +
+#   xlab("Phylogenetic Heterogenity Score") 
+# ggsave(paste0(path,method,"/ScatterPlot_PhylogeneticDiversity_DMRDiffClusters.png", sep = ""))

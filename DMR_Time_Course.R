@@ -56,17 +56,19 @@ get_CpGs_from_manifest <- function(idxs){
 
 ### Load Data ####
 path <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/R_Dimmer/Thesis_Results/"
-dataset <- "6-T1D"
+dataset <- "1-EX"
 method <- "Friedman" # Regression ANOVA Friedman
 
-beta_matrix_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/output_Friedman/beta_matrix.csv'
-annotation_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/sample_annotation4_case.csv'
-dmr_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/output_Friedman/230801061054854_DMRSearch_org/merged_table.csv'
+beta_matrix_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_ANOVA/beta_matrix.csv'
+annotation_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/sample_annotation2_onlyHL.csv'
+dmr_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_Friedman/23073110460979_DMRSearch_org/merged_table.csv'
+project_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_Friedman/dimmer_project.csv'
 manifestEPIC_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/DimmerJava/src/main/resources/epic_manifest.csv' # to get the CpGs contained in/ overlapping with a DMR
 manifest450k_file <- '/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/DimmerJava/src/main/resources/manifest_summary.csv' # to get the CpGs contained in/ overlapping with a DMR
 
 beta_matrix <- data.table::fread(beta_matrix_file)
 annotation_data <- data.table::fread(annotation_file)
+dimmer_project <- data.table::fread(project_file)
 # change this according to the array type of the dataset
 manifest <- data.table::fread(manifestEPIC_file) 
 
@@ -79,6 +81,7 @@ manifest_ranges
 # produce Granges Object for ANOVA and Friedman DMRs
 dmr <- data.table::fread(dmr_file)
 dmr$Chr <- paste("chr", dmr$Chr, sep="")
+dmr$ID <- rownames(dmr)
 
 # change this according to the dmrs you want to plot
 dmr_sign <- head(dmr[order(`p-value`, decreasing=FALSE),],1)
@@ -107,16 +110,26 @@ if (method == "Regression"){
   my_colors <- rev(pal_material(palette = "light-green")(length(unique(long_DT$PatientNr))))
 }
 
-g <- ggplot(long_DT,aes(x = timestamp, y = value, colour = factor(PatientNr))) +
+merge_dt <- data.table("CpG" = dimmer_project$CPG,    
+                       "pvalue" = dimmer_project$ORG)
+long_DT_merged <- merge(long_DT, merge_dt, by = "CpG", all = FALSE, sort = FALSE)
+dimmer_project[dimmer_project$CPG=="cg04317686"]
+long_DT_merged$pvalue <- as.character(format(round(long_DT_merged$pvalue, digits = 5),scientific=FALSE))
+long_DT_merged$pvalue[is.na(long_DT_merged$pvalue)] <- "Insign."
+
+long_DT_merged$x <- paste(long_DT_merged$CpG, '\np-value: ', long_DT_merged$pvalue, sep = "")
+
+g <- ggplot(long_DT_merged,aes(x = timestamp, y = value, colour = factor(PatientNr))) +
   geom_line() + ylim(0.0,1.0) + scale_x_continuous(breaks=seq(breaks_start, breaks_end, step)) + scale_color_manual(values = my_colors) + #seq(breaks_start, breaks_end, step) c(3,12,24,48,60)
   geom_point() + xlab("Timestamps") + ylab("Beta Value") + guides(color=guide_legend("Patient No.")) +
+  theme(text=element_text(size=10)) +
   #scale_colour_viridis(option= "inferno", discrete = TRUE) + #option= "turbo", discrete = TRUE
   #scale_color_futurama() + 
   ggtitle(paste("Time Course of Top",method,"DMR - Dataset",dataset)) +
-  facet_wrap(~CpG, nrow = 2, ncol = 7) #change according to length of DMR
+  facet_wrap(~x, nrow = 2, ncol = 7) #change according to length of DMR
 g
 ggsave(paste0(path,dataset,"/TimeCourse_",method,"_TopDMR.png"),
-       width=9,height=5,units = "in") #change according to length of DMR
+       width=9.5,height=6,units = "in") #change according to length of DMR
 
 # 14 CpGs: width=9,height=6
 # 8 CpGs: width=10,height=3
@@ -125,8 +138,8 @@ ggsave(paste0(path,dataset,"/TimeCourse_",method,"_TopDMR.png"),
 ### Plot Denisity per Region for this Dataset ####
 manifest_dt <- data.table("CpGs" = manifest_ranges$IlmnID, "regionType" = manifest_ranges$regionType)
 
-dt_allCpGs[1:10,1:10]
 dt_allCpGs <- build_dt(beta_matrix$CpG_ID)
+dt_allCpGs[1:10,1:10]
 dt_allCpGs <- dt_allCpGs[dt_allCpGs$timestamp==3] # only take the basline beta_values
 dt_allCpGs$Group_ID <- NULL
 dt_allCpGs$Gender_ID <- NULL

@@ -17,15 +17,15 @@ require(ComplexHeatmap)
 require(ggsci)
 
 path_plots <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/R_Dimmer/Thesis_Results/"
-dataset <- '6-T1D'
+dataset <- '1-EX'
 plot <- FALSE # determines if overlap plots should be produced
 
 ### Read in dmr tables and Preprocess it to get LOLA input ####
-regfile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/output_Reg/230801045342842_DMRSearch_org/merged_table.csv"
+regfile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_Reg/230731094728728_DMRSearch_org/merged_table.csv"
 dmr_reg <- data.table::fread(regfile, header = TRUE, sep = ",")
-anovafile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/output_Anova/230801051455855_DMRSearch_org/merged_table.csv"
+anovafile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_ANOVA/230731100721721_DMRSearch_org/merged_table.csv"
 dmr_anova <- data.table::fread(anovafile, header = TRUE, sep = ",")
-friedTfile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE142512_methylationDifferencesPrecedeType1diabetes/output_Friedman/230801061054854_DMRSearch_org/merged_table.csv"
+friedTfile <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/Datensets/GSE220928_SkeletalMuscleTraining/output_HL_Friedman/23073110460979_DMRSearch_org/merged_table.csv"
 dmr_friedman <- data.table::fread(friedTfile, header = TRUE, sep = ",")
 
 # Build Universe from all DMRs found in Dimmer Search
@@ -36,7 +36,11 @@ dmr_anova_ranges <- makeGRangesFromDataFrame(dmr_anova[,1:3],start.field = "Begi
 dmr_friedman$Chr <- paste("chr", dmr_friedman$Chr, sep="")
 dmr_friedman_ranges <- makeGRangesFromDataFrame(dmr_friedman[,1:3],start.field = "Begin", end.field = "End") # .bed format
 
-### Only for dataset 6-T1D: Test for overlaps withe the found DMRs of the study ####
+combined_DMR_Ranges <- GRangesList(dmr_reg_ranges, dmr_anova_ranges, dmr_friedman_ranges)
+names(combined_DMR_Ranges) <- c('dmr_reg','dmr_anova','dmr_friedman')
+userUniverse <- buildRestrictedUniverse(combined_DMR_Ranges)
+
+### Test for overlaps (with the found DMRs of the study, of specific DMRs (TimeCourse etc.) ####
 # file <- "/Users/basti/Documents/Uni/Bioinformatik/Bachelorarbeit/DimMeR/R_Dimmer/Thesis_Results/6-T1D/studyDMRs.csv"
 # dmr_study <- data.table::fread(file, header = TRUE ,sep = ",")
 # rownames(dmr_study) <- dmr_study$DMR
